@@ -90,7 +90,8 @@ class Product(models.Model):
     vin = models.CharField(max_length=50, blank=True, null=True)
     
     # Media
-    featured_image = models.URLField(blank=True, null=True)
+    featured_image = models.ImageField(upload_to='products/featured/', blank=True, null=True)
+    video = models.FileField(upload_to='products/videos/', blank=True, null=True)
     images = models.JSONField(default=list, blank=True)
     
     # SEO

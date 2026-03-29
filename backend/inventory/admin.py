@@ -33,7 +33,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ['sku', 'name', 'description', 'brand', 'model', 'vin']
     prepopulated_fields = {'slug': ('name',)}
     list_editable = ['selling_price', 'quantity', 'status', 'is_featured']
-    date_hierarchy = 'created_at'
+    #date_hierarchy = 'created_at'
     
     fieldsets = (
         ('Basic Information', {
@@ -53,7 +53,7 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Media', {
-            'fields': ('featured_image', 'images')
+            'fields': ('featured_image', 'video', 'images')
         }),
         ('SEO', {
             'fields': ('meta_title', 'meta_description', 'meta_keywords'),

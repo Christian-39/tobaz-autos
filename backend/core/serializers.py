@@ -12,6 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     """User serializer."""
     
     full_name = serializers.CharField(source='get_full_name', read_only=True)
+    profile_image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = User

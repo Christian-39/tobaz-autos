@@ -51,25 +51,49 @@ export const apiService = {
   get: <T>(url: string, config?: AxiosRequestConfig) =>
     api.get<T>(url, config).then((res) => res.data),
 
-  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    api.post<T>(url, data, config).then((res) => res.data),
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    const isFormData = data instanceof FormData;
+    return api.post<T>(url, data, {
+      ...config,
+      headers: {
+        ...config?.headers,
+        ...(isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' }),
+      },
+    }).then((res) => res.data);
+  },
 
-  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    api.put<T>(url, data, config).then((res) => res.data),
+  // Smart PUT: Automatically detects FormData and sets the correct header
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    const isFormData = data instanceof FormData;
+    return api.put<T>(url, data, {
+      ...config,
+      headers: {
+        ...config?.headers,
+        ...(isFormData ? { 'Content-Type': 'multipart/form-data' } : {}),
+      },
+    }).then((res) => res.data);
+  },
 
-  patch: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    api.patch<T>(url, data, config).then((res) => res.data),
+  // Smart PATCH: Handles partial updates and file buffers reliably
+  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    const isFormData = data instanceof FormData;
+    return api.patch<T>(url, data, {
+      ...config,
+      headers: {
+        ...config?.headers,
+        ...(isFormData ? { 'Content-Type': 'multipart/form-data' } : {}),
+      },
+    }).then((res) => res.data);
+  },
 
   delete: <T>(url: string, config?: AxiosRequestConfig) =>
     api.delete<T>(url, config).then((res) => res.data),
 
-  upload: <T>(url: string, file: File, fieldName = 'image') => {
+    upload: <T>(url: string, file: File, fieldName = 'image', method: 'post' | 'patch' = 'post') => {
     const formData = new FormData()
     formData.append(fieldName, file)
-    return api.post<T>(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    return api[method]<T>(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     }).then((res) => res.data)
   },
 }
@@ -83,7 +107,7 @@ export const authApi = {
     apiService.get<unknown>('/auth/profile/'),
 
   updateProfile: (data: unknown) =>
-    apiService.put<unknown>('/auth/profile/', data),
+    apiService.patch<unknown>('/auth/profile/', data),
 
   changePassword: (data: { old_password: string; new_password: string }) =>
     apiService.post('/auth/profile/change-password/', data),
@@ -98,7 +122,7 @@ export const authApi = {
     apiService.post('/auth/register/', data),
 
   updateUser: (id: string, data: unknown) =>
-    apiService.put(`/auth/users/${id}/`, data),
+    apiService.patch(`/auth/users/${id}/`, data),
 
   deleteUser: (id: string) =>
     apiService.delete(`/auth/users/${id}/`),
@@ -125,7 +149,7 @@ export const productsApi = {
     apiService.post('/inventory/categories/', data),
 
   updateCategory: (id: string, data: unknown) =>
-    apiService.put(`/inventory/categories/${id}/`, data),
+    apiService.patch(`/inventory/categories/${id}/`, data),
 
   deleteCategory: (id: string) =>
     apiService.delete(`/inventory/categories/${id}/`),
@@ -143,13 +167,13 @@ export const productsApi = {
     apiService.post('/inventory/products/', data),
 
   updateProduct: (id: string, data: unknown) =>
-    apiService.put(`/inventory/products/${id}/`, data),
+    apiService.patch(`/inventory/products/${id}/`, data),
 
   deleteProduct: (id: string) =>
     apiService.delete(`/inventory/products/${id}/`),
 
   uploadImage: (id: string, file: File) =>
-    apiService.upload(`/inventory/products/${id}/upload-image/`, file, 'image'),
+    apiService.upload(`/inventory/products/${id}/upload-image/`, file, 'featured_image'),
 
   adjustStock: (id: string, data: { quantity: number; reason: string; reference?: string }) =>
     apiService.post(`/inventory/products/${id}/adjust-stock/`, data),
@@ -170,7 +194,7 @@ export const productsApi = {
     apiService.post('/inventory/suppliers/', data),
 
   updateSupplier: (id: string, data: unknown) =>
-    apiService.put(`/inventory/suppliers/${id}/`, data),
+    apiService.patch(`/inventory/suppliers/${id}/`, data),
 
   deleteSupplier: (id: string) =>
     apiService.delete(`/inventory/suppliers/${id}/`),
@@ -188,7 +212,7 @@ export const salesApi = {
     apiService.post('/sales/customers/', data),
 
   updateCustomer: (id: string, data: unknown) =>
-    apiService.put(`/sales/customers/${id}/`, data),
+    apiService.patch(`/sales/customers/${id}/`, data),
 
   deleteCustomer: (id: string) =>
     apiService.delete(`/sales/customers/${id}/`),
@@ -203,7 +227,7 @@ export const salesApi = {
     apiService.post('/sales/', data),
 
   updateSale: (id: string, data: unknown) =>
-    apiService.put(`/sales/${id}/`, data),
+    apiService.patch(`/sales/${id}/`, data),
 
   deleteSale: (id: string) =>
     apiService.delete(`/sales/${id}/`),
@@ -242,7 +266,7 @@ export const shipmentsApi = {
     apiService.post('/shipments/', data),
 
   updateShipment: (id: string, data: unknown) =>
-    apiService.put(`/shipments/${id}/`, data),
+    apiService.patch(`/shipments/${id}/`, data),
 
   deleteShipment: (id: string) =>
     apiService.delete(`/shipments/${id}/`),
@@ -292,7 +316,7 @@ export const expensesApi = {
     apiService.post('/expenses/categories/', data),
 
   updateCategory: (id: string, data: unknown) =>
-    apiService.put(`/expenses/categories/${id}/`, data),
+    apiService.patch(`/expenses/categories/${id}/`, data),
 
   deleteCategory: (id: string) =>
     apiService.delete(`/expenses/categories/${id}/`),
@@ -307,7 +331,7 @@ export const expensesApi = {
     apiService.post('/expenses/', data),
 
   updateExpense: (id: string, data: unknown) =>
-    apiService.put(`/expenses/${id}/`, data),
+    apiService.patch(`/expenses/${id}/`, data),
 
   deleteExpense: (id: string) =>
     apiService.delete(`/expenses/${id}/`),
@@ -333,7 +357,7 @@ export const expensesApi = {
     apiService.post('/expenses/recurring/', data),
 
   updateRecurring: (id: string, data: unknown) =>
-    apiService.put(`/expenses/recurring/${id}/`, data),
+    apiService.patch(`/expenses/recurring/${id}/`, data),
 
   deleteRecurring: (id: string) =>
     apiService.delete(`/expenses/recurring/${id}/`),
@@ -348,7 +372,7 @@ export const expensesApi = {
     apiService.post('/expenses/budgets/', data),
 
   updateBudget: (id: string, data: unknown) =>
-    apiService.put(`/expenses/budgets/${id}/`, data),
+    apiService.patch(`/expenses/budgets/${id}/`, data),
 
   deleteBudget: (id: string) =>
     apiService.delete(`/expenses/budgets/${id}/`),
@@ -381,7 +405,7 @@ export const settingsApi = {
     apiService.get<unknown>('/auth/settings/'),
 
   updateSetting: (key: string, value: string) =>
-    apiService.put(`/auth/settings/${key}/`, { value }),
+    apiService.patch(`/auth/settings/${key}/`, { value }),
 }
 
-export default api
+export default api;

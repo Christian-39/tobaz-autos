@@ -59,7 +59,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'cost_price', 'selling_price', 'quantity', 'reorder_level',
             'reorder_quantity', 'stock_status', 'profit_margin', 'inventory_value',
             'brand', 'model', 'year', 'condition', 'mileage', 'fuel_type',
-            'transmission', 'color', 'vin', 'featured_image', 'images',
+            'transmission', 'color', 'vin', 'featured_image', 'video', 'images',
             'meta_title', 'meta_description', 'meta_keywords',
             'status', 'is_featured', 'created_by', 'created_by_name',
             'created_at', 'updated_at'
@@ -75,7 +75,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'name', 'description', 'category', 'cost_price', 'selling_price',
             'quantity', 'reorder_level', 'reorder_quantity', 'brand', 'model',
             'year', 'condition', 'mileage', 'fuel_type', 'transmission',
-            'color', 'vin', 'featured_image', 'images', 'meta_title',
+            'color', 'vin', 'featured_image', 'video', 'images', 'meta_title',
             'meta_description', 'meta_keywords', 'status', 'is_featured'
         ]
 
@@ -89,7 +89,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'name', 'description', 'category', 'cost_price', 'selling_price',
             'reorder_level', 'reorder_quantity', 'brand', 'model', 'year',
             'condition', 'mileage', 'fuel_type', 'transmission', 'color',
-            'vin', 'featured_image', 'images', 'meta_title', 'meta_description',
+            'vin', 'featured_image', 'video','images', 'meta_title', 'meta_description',
             'meta_keywords', 'status', 'is_featured'
         ]
 

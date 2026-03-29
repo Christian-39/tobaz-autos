@@ -19,7 +19,7 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
     phone = models.CharField(max_length=20, blank=True, null=True)
-    profile_image = models.URLField(blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

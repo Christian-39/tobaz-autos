@@ -10,6 +10,7 @@ import {
   Trash2,
   Eye,
   AlertTriangle,
+  Package,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -31,7 +32,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { productsApi } from '@/lib/api'
-import { formatCurrency, getStockStatusColor, truncateText } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import type { Product } from '@/types'
 
 const containerVariants = {
@@ -56,6 +57,13 @@ export default function Products() {
     status: '',
     stock_status: '',
   })
+
+  // Helper for Product Images
+  const getImageUrl = (path: string | null | undefined) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `http://127.0.0.1:8000${path}`;
+  };
 
   useEffect(() => {
     fetchProducts()
@@ -93,12 +101,12 @@ export default function Products() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
-      active: 'bg-green-500',
-      inactive: 'bg-gray-500',
-      discontinued: 'bg-red-500',
+      active: 'bg-green-500 hover:bg-green-600',
+      inactive: 'bg-gray-500 hover:bg-gray-600',
+      discontinued: 'bg-red-500 hover:bg-red-600',
     }
     return (
-      <Badge className={variants[status] || 'bg-gray-500'}>
+      <Badge className={`${variants[status] || 'bg-gray-500'} text-white border-transparent`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     )
@@ -106,12 +114,12 @@ export default function Products() {
 
   const getStockBadge = (status: string) => {
     const variants: Record<string, string> = {
-      in_stock: 'bg-green-500',
-      low_stock: 'bg-yellow-500',
-      out_of_stock: 'bg-red-500',
+      in_stock: 'bg-green-100 text-green-700 hover:bg-green-100',
+      low_stock: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100',
+      out_of_stock: 'bg-red-100 text-red-700 hover:bg-red-100',
     }
     return (
-      <Badge className={variants[status] || 'bg-gray-500'}>
+      <Badge variant="outline" className={`${variants[status] || 'bg-gray-100'} border-transparent`}>
         {status.replace('_', ' ').charAt(0).toUpperCase() +
           status.replace('_', ' ').slice(1)}
       </Badge>
@@ -136,7 +144,7 @@ export default function Products() {
             Manage your products and inventory
           </p>
         </div>
-        <Button asChild>
+        <Button asChild shadow-sm="true">
           <Link to="/products/new">
             <Plus className="mr-2 h-4 w-4" />
             Add Product
@@ -170,7 +178,7 @@ export default function Products() {
                   onChange={(e) =>
                     setFilters({ ...filters, status: e.target.value })
                   }
-                  className="px-3 py-2 rounded-md border bg-background"
+                  className="px-3 py-2 rounded-md border bg-background text-sm"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -182,7 +190,7 @@ export default function Products() {
                   onChange={(e) =>
                     setFilters({ ...filters, stock_status: e.target.value })
                   }
-                  className="px-3 py-2 rounded-md border bg-background"
+                  className="px-3 py-2 rounded-md border bg-background text-sm"
                 >
                   <option value="">All Stock</option>
                   <option value="in_stock">In Stock</option>
@@ -234,21 +242,19 @@ export default function Products() {
                           <div className="flex items-center gap-3">
                             {product.featured_image ? (
                               <img
-                                src={product.featured_image}
+                                src={getImageUrl(product.featured_image)!}
                                 alt={product.name}
-                                className="h-10 w-10 rounded-lg object-cover"
+                                className="h-10 w-10 rounded-lg object-cover border"
                               />
                             ) : (
-                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                                <span className="text-xs text-muted-foreground">
-                                  No img
-                                </span>
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center border">
+                                <Package className="h-5 w-5 text-muted-foreground/50" />
                               </div>
                             )}
                             <div>
                               <p className="font-medium">{product.name}</p>
                               {product.stock_status === 'low_stock' && (
-                                <p className="text-xs text-yellow-600 flex items-center gap-1">
+                                <p className="text-[10px] text-yellow-600 font-bold uppercase flex items-center gap-1">
                                   <AlertTriangle className="h-3 w-3" />
                                   Low stock
                                 </p>
@@ -256,23 +262,23 @@ export default function Products() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-mono text-xs text-muted-foreground">
                           {product.sku}
                         </TableCell>
                         <TableCell>{product.category_name || '-'}</TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">
+                            <p className="font-semibold text-sm">
                               {formatCurrency(product.selling_price)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[11px] text-muted-foreground">
                               Cost: {formatCurrency(product.cost_price)}
                             </p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{product.quantity}</p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">{product.quantity} units</p>
                             {getStockBadge(product.stock_status)}
                           </div>
                         </TableCell>
@@ -288,18 +294,18 @@ export default function Products() {
                               <DropdownMenuItem asChild>
                                 <Link to={`/products/${product.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
-                                  View
+                                  View Details
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link to={`/products/${product.id}/edit`}>
                                   <Edit className="mr-2 h-4 w-4" />
-                                  Edit
+                                  Edit Product
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDelete(product.id)}
-                                className="text-red-600"
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete

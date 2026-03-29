@@ -8,21 +8,28 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Desktop Sidebar */}
+    // h-screen locks the whole app to the window height
+    // overflow-hidden prevents the whole page from scrolling
+    <div className="flex h-screen overflow-hidden bg-background">
+      
+      {/* Sidebar - should stay fixed/relative as we discussed */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Header */}
-      <Header onMenuClick={() => setSidebarOpen(true)} />
+      {/* Content Wrapper */}
+      <div className="flex flex-col flex-1 min-w-0 relative">
+        
+        {/* Header - usually h-16 */}
+        <Header onMenuClick={() => setSidebarOpen(true)} />
 
-      {/* Main Content */}
-      <main className="lg:pl-64 pb-20 lg:pb-0">
-        <div className="p-4 lg:p-8">
-          <Outlet />
-        </div>
-      </main>
+        {/* Main Content Area */}
+        {/* overflow-y-auto makes ONLY this section scrollable */}
+        <main className="flex-1 overflow-y-auto pt-16 pb-20 lg:pb-0">
+          <div className="p-4 lg:p-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
 
-      {/* Mobile Bottom Navigation */}
       <BottomNav />
     </div>
   )

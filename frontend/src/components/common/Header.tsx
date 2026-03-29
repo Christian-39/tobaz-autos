@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
@@ -34,8 +33,17 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth()
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // --- HELPER FUNCTION DEFINED HERE ---
+  const getProfileImageUrl = (path: string | null | undefined) => {
+    if (!path) return undefined;
+    // If it's already a full URL (Backblaze B2), return it
+    if (path.startsWith('http')) return path;
+    // If it's a relative path from Django, point to port 8000
+    return `http://127.0.0.1:8000${path}`;
+  };
 
   const handleLogout = () => {
     logout()
@@ -139,7 +147,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.profile_image} alt={user?.full_name} />
+                  <AvatarImage 
+                    src={getProfileImageUrl(user?.profile_image)} 
+                    alt={user?.full_name} 
+                  />
                   <AvatarFallback>{getInitials(user?.full_name || 'U')}</AvatarFallback>
                 </Avatar>
               </Button>

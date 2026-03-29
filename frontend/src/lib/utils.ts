@@ -5,11 +5,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number, currency = '₦'): string {
-  return `${currency}${amount.toLocaleString('en-NG', {
+/**
+ * Fixes the Comma/Formatting issue. 
+ * Handles strings, numbers, and null values safely.
+ */
+export function formatCurrency(amount: number | string | null | undefined, currency = '₦'): string {
+  // Convert to number in case a string was passed from the API
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+  if (value === null || value === undefined || isNaN(value)) {
+    return `${currency}0.00`;
+  }
+
+  return `${currency}${value.toLocaleString('en-NG', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`
+  })}`;
+}
+
+/**
+ * Global helper to fix Image/Video paths from Django
+ */
+export function getImageUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  // Adjust this URL to match your Django server address
+  return `http://127.0.0.1:8000${path}`;
 }
 
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
@@ -33,18 +54,23 @@ export function formatDateTime(date: string | Date): string {
   })
 }
 
-export function formatNumber(num: number): string {
-  return num.toLocaleString('en-NG')
+export function formatNumber(num: number | string): string {
+  const value = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(value)) return '0';
+  return value.toLocaleString('en-NG')
 }
 
 export function truncateText(text: string, maxLength: number): string {
+  if (!text) return '';
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '...'
 }
 
 export function getInitials(name: string): string {
+  if (!name) return '??';
   return name
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
@@ -154,10 +180,12 @@ export function uniqueBy<T>(array: T[], key: keyof T): T[] {
 }
 
 export function capitalizeFirst(str: string): string {
+  if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 export function snakeToTitle(str: string): string {
+  if (!str) return '';
   return str
     .split('_')
     .map((word) => capitalizeFirst(word))
