@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tobaz Autos | Backend Status</title>
+    <style>
+      :root {
+        --primary: #3b82f6;
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --success: #22c55e;
+      }
+
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .container {
+        background-color: var(--card);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        border: 1px solid #334155;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--success);
+        padding: 0.5rem 1rem;
+        border-radius: 99px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .status-dot {
+        height: 8px;
+        width: 8px;
+        background-color: var(--success);
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        box-shadow: 0 0 8px var(--success);
+      }
+
+      h1 {
+        margin: 0 0 1rem 0;
+        font-size: 1.75rem;
+        color: var(--text);
+      }
+
+      p {
+        color: #94a3b8;
+        line-height: 1.6;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 2rem;
+        text-align: left;
+        border-top: 1px solid #334155;
+        padding-top: 1.5rem;
+      }
+
+      .info-item label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+      }
+
+      .info-item span {
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+
+      .btn {
+        display: inline-block;
+        margin-top: 2rem;
+        background-color: var(--primary);
+        color: white;
+        text-decoration: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: opacity 0.2s;
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        Operational
+      </div>
+
+      <h1>Tobaz Autos API</h1>
+      <p>
+        The Django backend services are running successfully. This endpoint is
+        configured to serve the API and administrative interface.
+      </p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Environment</label>
+          <span>Development</span>
+        </div>
+        <div class="info-item">
+          <label>System Time</label>
+          <span id="time">Loading...</span>
+        </div>
+        <div class="info-item">
+          <label>Database</label>
+          <span>MySQL Connected</span>
+        </div>
+        <div class="info-item">
+          <label>Vite Frontend</label>
+          <span>Port 5173</span>
+        </div>
+      </div>
+
+      <a href="/admin/" class="btn">Go to Admin Dashboard</a>
+    </div>
+
+    <script>
+      // Just a little flair to show the system clock
+      function updateTime() {
+        const now = new Date();
+        document.getElementById("time").innerText = now.toLocaleTimeString();
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+    </script>
+  </body>
+</html>
