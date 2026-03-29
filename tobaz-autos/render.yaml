@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: tobaz-autos
+    runtime: python
+    buildCommand: "cd backend && chmod +x build.sh && ./build.sh"
+    startCommand: "cd backend && gunicorn tobaz_autos.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tobaz-autos-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: BACKBLAZE_B2_ENABLED
+        value: "False"
+    disk:
+      name: media
+      mountPath: /opt/render/project/src/backend/media
+      sizeGB: 5
+
+databases:
+  - name: tobaz-autos-db
+    databaseName: tobaz_autos
+    user: tobaz_autos
+    plan: free
