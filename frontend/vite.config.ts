@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 export default defineConfig({
-  base: '/static/',  
+  base: '/',  // Root path for static site
   plugins: [react()],
   resolve: {
     alias: {
@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../backend/staticfiles',  
+    outDir: 'dist',  // Render static site looks here
     emptyOutDir: true,
   },
 });
