@@ -173,7 +173,7 @@ export const productsApi = {
     apiService.delete(`/inventory/products/${id}/`),
 
   uploadImage: (id: string, file: File) =>
-    apiService.upload(`/inventory/products/${id}/upload-image/`, file, 'featured_image'),
+    apiService.upload(`/inventory/products/${id}/upload-image/`, file, 'image'),
 
   adjustStock: (id: string, data: { quantity: number; reason: string; reference?: string }) =>
     apiService.post(`/inventory/products/${id}/adjust-stock/`, data),

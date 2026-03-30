@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Loader2, Save, ImagePlus, Video, X, PlayCircle } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, ImagePlus, Video, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,9 +19,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { productsApi } from '@/lib/api'
 import type { Category } from '@/types'
-
-// Ensure this matches your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -45,13 +42,11 @@ export default function ProductForm() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  // UPDATED: Media states to handle arrays
-  const [existingImages, setExistingImages] = useState<string[]>([])
+  
+  // File management states
   const [selectedImages, setSelectedImages] = useState<File[]>([])
-  const [existingVideo, setExistingVideo] = useState<string | null>(null)
-  const [selectedVideo, setSelectedVideo] = useState<File | null>(null)
-
+  const [selectedVideos, setSelectedVideos] = useState<File[]>([])
+  
   const isEditing = !!id
 
   const {
@@ -74,7 +69,9 @@ export default function ProductForm() {
 
   useEffect(() => {
     fetchCategories()
-    if (isEditing) fetchProduct()
+    if (isEditing) {
+      fetchProduct()
+    }
   }, [id])
 
   const fetchCategories = async () => {
@@ -91,22 +88,11 @@ export default function ProductForm() {
       setLoading(true)
       const product = await productsApi.getProduct(id!)
       const p = product as any
-
       Object.keys(p).forEach((key) => {
         if (key in productSchema.shape) {
           setValue(key as keyof ProductFormData, p[key])
         }
       })
-
-      // UPDATED: Handle potential array of images from backend
-      if (p.images && Array.isArray(p.images)) {
-          setExistingImages(p.images.map((img: any) => img.image || img))
-      } else if (p.featured_image) {
-          setExistingImages([p.featured_image])
-      }
-      
-      if (p.video) setExistingVideo(p.video)
-
     } catch (error) {
       toast.error('Failed to fetch product')
       navigate('/products')
@@ -115,50 +101,49 @@ export default function ProductForm() {
     }
   }
 
-  const getMediaUrl = (path: string) => {
-    if (!path) return ''
-    return path.startsWith('http') ? path : `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
-  }
-
-  // UPDATED: Multi-image change handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
-      setSelectedImages((prev) => [...prev, ...filesArray])
+      setSelectedImages((prev) => [...prev, ...Array.from(e.target.files!)])
     }
   }
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setSelectedVideo(e.target.files[0])
+    if (e.target.files) {
+      setSelectedVideos((prev) => [...prev, ...Array.from(e.target.files!)])
     }
+  }
+
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const removeVideo = (index: number) => {
+    setSelectedVideos((prev) => prev.filter((_, i) => i !== index))
   }
 
   const onSubmit = async (data: ProductFormData) => {
     try {
       setSaving(true)
+      
+      // Use FormData to handle file uploads
       const formData = new FormData()
-
+      
+      // Append text fields
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, value.toString())
         }
       })
 
-      // UPDATED: Handle Multi-Images
+      // Append Image files
       selectedImages.forEach((file) => {
-        formData.append('images', file) // Using 'images' key for multiple upload
+        formData.append('uploaded_images', file)
       })
 
-      // Also send existing image paths to keep (helps backend know which to delete)
-      formData.append('existing_images', JSON.stringify(existingImages))
-
-      // Handle Video
-      if (selectedVideo) {
-        formData.append('video', selectedVideo)
-      } else if (!existingVideo && isEditing) {
-        formData.append('video', '') 
-      }
+      // Append Video files
+      selectedVideos.forEach((file) => {
+        formData.append('uploaded_videos', file)
+      })
 
       if (isEditing) {
         await productsApi.updateProduct(id!, formData)
@@ -169,13 +154,19 @@ export default function ProductForm() {
       }
       navigate('/products')
     } catch (error) {
-      toast.error('Failed to save product')
+      toast.error(isEditing ? 'Failed to update product' : 'Failed to create product')
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -184,8 +175,12 @@ export default function ProductForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{isEditing ? 'Edit Product' : 'Add Product'}</h1>
-          <p className="text-muted-foreground mt-1">Manage your inventory details and media.</p>
+          <h1 className="text-3xl font-bold">
+            {isEditing ? 'Edit Product' : 'Add Product'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isEditing ? 'Update product information' : 'Create a new product'}
+          </p>
         </div>
       </div>
 
@@ -193,12 +188,16 @@ export default function ProductForm() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Basic Information */}
           <Card>
-            <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Product Name *</Label>
                 <Input id="name" {...register('name')} />
-                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -206,74 +205,116 @@ export default function ProductForm() {
                 <Textarea id="description" {...register('description')} rows={4} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select onValueChange={(v) => setValue('category', v)} value={watch('category')}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Condition</Label>
-                  <Select onValueChange={(v: any) => setValue('condition', v)} value={watch('condition')}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="used">Used</SelectItem>
-                      <SelectItem value="refurbished">Refurbished</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select onValueChange={(value) => setValue('category', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Brand</Label>
-                  <Input {...register('brand')} />
+                  <Label htmlFor="brand">Brand</Label>
+                  <Input id="brand" {...register('brand')} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Model</Label>
-                  <Input {...register('model')} />
+                  <Label htmlFor="model">Model</Label>
+                  <Input id="model" {...register('model')} />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="condition">Condition</Label>
+                <Select
+                  onValueChange={(value: any) => setValue('condition', value)}
+                  defaultValue={watch('condition')}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="refurbished">Refurbished</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
 
           {/* Pricing & Inventory */}
           <Card>
-            <CardHeader><CardTitle>Pricing & Inventory</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Pricing & Inventory</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Cost Price ($)</Label>
-                  <Input type="number" step="0.01" {...register('cost_price', { valueAsNumber: true })} />
+                  <Label htmlFor="cost_price">Cost Price *</Label>
+                  <Input
+                    id="cost_price"
+                    type="number"
+                    step="0.01"
+                    {...register('cost_price', { valueAsNumber: true })}
+                  />
+                  {errors.cost_price && (
+                    <p className="text-sm text-red-500">{errors.cost_price.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Selling Price ($)</Label>
-                  <Input type="number" step="0.01" {...register('selling_price', { valueAsNumber: true })} />
+                  <Label htmlFor="selling_price">Selling Price *</Label>
+                  <Input
+                    id="selling_price"
+                    type="number"
+                    step="0.01"
+                    {...register('selling_price', { valueAsNumber: true })}
+                  />
+                  {errors.selling_price && (
+                    <p className="text-sm text-red-500">{errors.selling_price.message}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Quantity</Label>
-                  <Input type="number" {...register('quantity', { valueAsNumber: true })} />
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    {...register('quantity', { valueAsNumber: true })}
+                  />
+                  {errors.quantity && (
+                    <p className="text-sm text-red-500">{errors.quantity.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Reorder Level</Label>
-                  <Input type="number" {...register('reorder_level', { valueAsNumber: true })} />
+                  <Label htmlFor="reorder_level">Reorder Level</Label>
+                  <Input
+                    id="reorder_level"
+                    type="number"
+                    {...register('reorder_level', { valueAsNumber: true })}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select onValueChange={(v: any) => setValue('status', v)} value={watch('status')}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  onValueChange={(value: any) => setValue('status', value)}
+                  defaultValue={watch('status')}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
@@ -285,81 +326,97 @@ export default function ProductForm() {
           </Card>
         </div>
 
-        {/* UPDATED: Media Card for Multi-Images */}
+        {/* Media Uploads */}
         <Card>
-          <CardHeader><CardTitle>Product Media</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Product Media</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-3">
+            {/* Images */}
+            <div className="space-y-4">
               <Label>Product Images</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {/* Existing Server Images */}
-                {existingImages.map((url, index) => (
-                  <div key={`existing-${index}`} className="relative h-32 border rounded-lg overflow-hidden bg-muted">
-                    <img src={getMediaUrl(url)} className="h-full w-full object-cover" alt="Product" />
-                    <Button 
-                      type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => setExistingImages(prev => prev.filter((_, i) => i !== index))}
+              <div className="flex flex-wrap gap-4">
+                {selectedImages.map((file, i) => (
+                  <div key={i} className="relative h-24 w-24 border rounded-md group overflow-hidden">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-3 w-3" />
-                    </Button>
+                    </button>
                   </div>
                 ))}
-
-                {/* Newly Selected Local Images */}
-                {selectedImages.map((file, index) => (
-                  <div key={`selected-${index}`} className="relative h-32 border rounded-lg overflow-hidden bg-muted">
-                    <img src={URL.createObjectURL(file)} className="h-full w-full object-cover" alt="Preview" />
-                    <Button 
-                      type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== index))}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-
-                {/* Upload Button */}
-                <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                  <ImagePlus className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground mt-2">Add Image</span>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+                <label className="h-24 w-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors">
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-[10px] mt-1 text-muted-foreground">Add Image</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
                 </label>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Product Video</Label>
-              <div className="relative h-48 w-full border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/30 overflow-hidden">
-                {selectedVideo || existingVideo ? (
-                  <div className="flex flex-col items-center p-4">
-                    <PlayCircle className="h-12 w-12 text-primary mb-2" />
-                    <p className="text-xs text-center truncate max-w-[200px]">
-                      {selectedVideo ? selectedVideo.name : 'Server-side Video'}
-                    </p>
-                    <Button 
-                      type="button" variant="destructive" size="icon" className="absolute top-2 right-2 rounded-full h-8 w-8"
-                      onClick={() => { setSelectedVideo(null); setExistingVideo(null); }}
+            {/* Videos */}
+            <div className="space-y-4">
+              <Label>Product Videos</Label>
+              <div className="flex flex-wrap gap-4">
+                {selectedVideos.map((file, i) => (
+                  <div key={i} className="relative h-24 w-40 border rounded-md group bg-black flex items-center justify-center">
+                    <Video className="h-8 w-8 text-white/50" />
+                    <span className="absolute bottom-1 left-2 text-[10px] text-white truncate max-w-[80%]">
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(i)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
-                ) : (
-                  <label className="cursor-pointer flex flex-col items-center">
-                    <Video className="h-10 w-10 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">Upload Video</span>
-                    <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
-                  </label>
-                )}
+                ))}
+                <label className="h-24 w-40 border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors">
+                  <Video className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-[10px] mt-1 text-muted-foreground">Add Video</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="video/*"
+                    className="hidden"
+                    onChange={handleVideoChange}
+                  />
+                </label>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4 mt-6">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            Cancel
+          </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {isEditing ? 'Update Product' : 'Create Product'}
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                {isEditing ? 'Update Product' : 'Create Product'}
+              </>
+            )}
           </Button>
         </div>
       </form>

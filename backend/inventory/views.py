@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from django.db.models import Q, F
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Category, Product, InventoryTransaction, Supplier
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import (
     CategorySerializer, CategoryCreateSerializer, ProductListSerializer,
     ProductDetailSerializer, ProductCreateSerializer, ProductUpdateSerializer,
@@ -64,7 +64,7 @@ class ProductListView(generics.ListCreateAPIView):
     """List and create products."""
     
     queryset = Product.objects.all()
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
     search_fields = ['name', 'sku', 'description', 'brand', 'model']
     filterset_fields = ['category', 'status', 'condition', 'is_featured']
