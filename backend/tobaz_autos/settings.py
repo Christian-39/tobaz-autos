@@ -5,6 +5,14 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import mimetypes
+
+# Fix MIME types BEFORE Django initializes
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("application/javascript", ".mjs")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("image/svg+xml", ".svg")
 
 # Load environment variables
 load_dotenv()
@@ -124,8 +132,8 @@ if (BASE_DIR / 'static').exists():
 else:
     STATICFILES_DIRS = []
 
-# WhiteNoise configuration
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise configuration - use standard storage for MIME type reliability
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
